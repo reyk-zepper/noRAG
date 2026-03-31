@@ -97,7 +97,7 @@ def create_app(config: Config | None = None) -> FastAPI:
     app = FastAPI(
         title="noRAG API",
         description="Knowledge Compiler REST API. Compile documents into machine-optimized knowledge.",
-        version="0.4.0",
+        version="1.0.0",
     )
 
     # Shared state — engines are created once at startup
@@ -133,7 +133,7 @@ def create_app(config: Config | None = None) -> FastAPI:
         """Health check."""
         return HealthResponse(
             status="ok",
-            version="0.4.0",
+            version="1.0.0",
             provider=config.provider,
             model=config.model,
         )

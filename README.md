@@ -64,28 +64,63 @@ norag compile ./documents/
 norag query "Wie laeuft das Onboarding in der ersten Woche?"
 ```
 
-### Ausfuehrliche Testanleitung
+### CLI-Referenz
 
-Siehe [docs/testing.md](docs/testing.md) fuer eine vollstaendige Anleitung mit Demo-Szenarien, CLI-Referenz und Erklaerung was bei Compile und Query passiert.
+```bash
+norag compile <path>     # Dokumente kompilieren (PDF, Markdown)
+norag query "Frage?"     # Wissen abfragen
+norag watch <dir>        # Verzeichnis beobachten, auto-recompile
+norag serve              # REST API starten (http://localhost:8484/docs)
+norag audit              # Audit-Log anzeigen
+norag bench <dataset>    # Benchmark ausfuehren
+norag info               # Store-Status und Konfiguration
+norag validate           # CKU-Dateien validieren
+norag --version          # Version anzeigen
+```
+
+### REST API
+
+```bash
+norag serve --port 8484
+```
+
+| Endpunkt          | Methode | Beschreibung |
+|-------------------|---------|--------------|
+| `/health`         | GET     | Health Check |
+| `/knowledge`      | GET     | CKU-Uebersicht und Stats |
+| `/compile`        | POST    | Dokument kompilieren (File Upload) |
+| `/query`          | POST    | Wissen abfragen |
+| `/audit`          | GET     | Audit-Log Events |
+| `/docs`           | GET     | OpenAPI Dokumentation |
+
+### Features
+
+- **Document Splitting** — Grosse Dokumente werden automatisch an H1/H2-Headings gesplittet
+- **Watch-Modus** — Automatische Rekompilation bei Dateiänderungen
+- **Access Control** — Rollenbasierte Zugriffskontrolle auf CKU-Ebene
+- **Audit Log** — Jede Kompilation und Query wird geloggt
+- **Benchmark-Kit** — Messbare Qualitaetsmetriken (Keyword-Score, Latenz, Token-Effizienz)
+- **CKU Spec v1** — Formale, offene Spezifikation ([docs/cku-spec-v1.md](docs/cku-spec-v1.md))
 
 ### Tech Stack
 
-- **Python 3.10+** mit Pydantic v2, Typer, Rich
+- **Python 3.10+** mit Pydantic v2, Typer, Rich, FastAPI
 - **CKU-Format**: YAML-Dateien — human-readable, git-versionierbar
 - **Knowledge Map**: SQLite mit FTS5 Volltext-Suche
 - **PDF-Parser**: PyMuPDF (Bilder, Tabellen, Diagramme)
 - **LLM**: Model-agnostisch — Claude API oder Ollama (lokal)
+- **API**: FastAPI mit OpenAPI-Docs
 
 ### Roadmap
 
 | Version | Status | Scope |
 |---------|--------|-------|
-| **v0.1** | **MVP implementiert** | compile + query CLI, PDF + Markdown, Claude + Ollama |
-| v0.2 | Geplant | Watch-Modus, inkrementelle Compilation |
-| v0.3 | Geplant | REST API, Server-Modus, Multi-LLM |
-| v0.4 | Geplant | Access Control, Audit Log |
-| v0.5 | Geplant | norag-bench Benchmark-Kit |
-| v1.0 | Geplant | Stabile CKU-Spezifikation, Production-Ready |
+| v0.1 | ✓ | compile + query CLI, PDF + Markdown, Claude + Ollama |
+| v0.2 | ✓ | Document Splitting, Watch-Modus |
+| v0.3 | ✓ | REST API (FastAPI), Server-Modus |
+| v0.4 | ✓ | Access Control, Audit Log |
+| v0.5 | ✓ | norag-bench Benchmark-Kit |
+| **v1.0** | **✓** | **Stabile CKU-Spezifikation, Production-Ready** |
 
 ### Lizenz
 
@@ -149,28 +184,63 @@ norag compile ./documents/
 norag query "How does the onboarding process work in the first week?"
 ```
 
-### Detailed Testing Guide
+### CLI Reference
 
-See [docs/testing.md](docs/testing.md) for a complete guide with demo scenarios, CLI reference, and explanation of what happens during compile and query.
+```bash
+norag compile <path>     # Compile documents (PDF, Markdown)
+norag query "question?"  # Query compiled knowledge
+norag watch <dir>        # Watch directory, auto-recompile on changes
+norag serve              # Start REST API (http://localhost:8484/docs)
+norag audit              # Show audit log
+norag bench <dataset>    # Run benchmark
+norag info               # Show store status and configuration
+norag validate           # Validate CKU files against schema
+norag --version          # Show version
+```
+
+### REST API
+
+```bash
+norag serve --port 8484
+```
+
+| Endpoint           | Method | Description |
+|--------------------|--------|-------------|
+| `/health`          | GET    | Health check |
+| `/knowledge`       | GET    | CKU overview and stats |
+| `/compile`         | POST   | Compile document (file upload) |
+| `/query`           | POST   | Query compiled knowledge |
+| `/audit`           | GET    | Audit log events |
+| `/docs`            | GET    | OpenAPI documentation |
+
+### Features
+
+- **Document Splitting** — Large documents are automatically split at H1/H2 headings
+- **Watch Mode** — Automatic recompilation on file changes
+- **Access Control** — Role-based access control at CKU level
+- **Audit Log** — Every compilation and query is logged
+- **Benchmark Kit** — Measurable quality metrics (keyword score, latency, token efficiency)
+- **CKU Spec v1** — Formal, open specification ([docs/cku-spec-v1.md](docs/cku-spec-v1.md))
 
 ### Tech Stack
 
-- **Python 3.10+** with Pydantic v2, Typer, Rich
+- **Python 3.10+** with Pydantic v2, Typer, Rich, FastAPI
 - **CKU format**: YAML files — human-readable, git-versionable
 - **Knowledge map**: SQLite with FTS5 full-text search
 - **PDF parser**: PyMuPDF (images, tables, diagrams)
 - **LLM**: Model-agnostic — Claude API or Ollama (local)
+- **API**: FastAPI with OpenAPI docs
 
 ### Roadmap
 
 | Version | Status | Scope |
 |---------|--------|-------|
-| **v0.1** | **MVP implemented** | compile + query CLI, PDF + Markdown, Claude + Ollama |
-| v0.2 | Planned | Watch mode, incremental compilation |
-| v0.3 | Planned | REST API, server mode, multi-LLM |
-| v0.4 | Planned | Access control, audit log |
-| v0.5 | Planned | norag-bench benchmark kit |
-| v1.0 | Planned | Stable CKU specification, production-ready |
+| v0.1 | ✓ | compile + query CLI, PDF + Markdown, Claude + Ollama |
+| v0.2 | ✓ | Document Splitting, watch mode |
+| v0.3 | ✓ | REST API (FastAPI), server mode |
+| v0.4 | ✓ | Access control, audit log |
+| v0.5 | ✓ | norag-bench benchmark kit |
+| **v1.0** | **✓** | **Stable CKU specification, production-ready** |
 
 ### License
 

@@ -59,7 +59,7 @@ class TestHealth:
 
     def test_health_shows_version(self, client: TestClient) -> None:
         data = client.get("/health").json()
-        assert data["version"] == "0.4.0"
+        assert data["version"] == "1.0.0"
 
 
 # ---------------------------------------------------------------------------
