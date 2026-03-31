@@ -17,6 +17,7 @@ class Config:
     model: str = "claude-sonnet-4-20250514"
     api_key: Optional[str] = None
     ollama_host: str = "http://localhost:11434"
+    max_section_lines: int = 200
 
     # Derived paths — computed after __post_init__
     ckus_dir: Path = field(init=False)
@@ -57,6 +58,7 @@ def load_config(store_dir: Optional[Path] = None) -> Config:
         "NORAG_MODEL": "model",
         "NORAG_API_KEY": "api_key",
         "NORAG_OLLAMA_HOST": "ollama_host",
+        "NORAG_MAX_SECTION_LINES": "max_section_lines",
         # Convenience aliases
         "ANTHROPIC_API_KEY": "api_key",
         "OLLAMA_HOST": "ollama_host",
@@ -75,8 +77,15 @@ def load_config(store_dir: Optional[Path] = None) -> Config:
     if store_dir is not None:
         cfg["store_dir"] = store_dir
 
+    # Cast numeric fields from string env vars
+    if "max_section_lines" in cfg:
+        try:
+            cfg["max_section_lines"] = int(cfg["max_section_lines"])
+        except (TypeError, ValueError):
+            cfg.pop("max_section_lines")
+
     # Build dataclass — only pass known init fields
-    init_fields = {"store_dir", "provider", "model", "api_key", "ollama_host"}
+    init_fields = {"store_dir", "provider", "model", "api_key", "ollama_host", "max_section_lines"}
     filtered = {k: v for k, v in cfg.items() if k in init_fields}
 
     return Config(**filtered)

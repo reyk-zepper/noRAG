@@ -36,6 +36,8 @@ from norag.models.cku import (
 )
 from norag.compiler.parsers import get_parser
 from norag.compiler.providers import get_provider
+from norag.compiler.splitter import split_document
+from norag.compiler.merger import merge_cku_dicts
 from norag.store import CKUStore, KnowledgeMap
 
 logger = logging.getLogger(__name__)
@@ -166,8 +168,16 @@ class CompilerEngine:
         parser = get_parser(path)
         parsed = parser.parse(path)
 
-        # 4. Compile via LLM provider
-        cku_data = self.provider.compile_document(parsed)
+        # 4. Split if needed, compile each chunk, merge
+        chunks = split_document(parsed, self.config.max_section_lines)
+        if len(chunks) > 1:
+            logger.info(
+                "Document split into %d sections (threshold: %d lines)",
+                len(chunks),
+                self.config.max_section_lines,
+            )
+        chunk_results = [self.provider.compile_document(chunk) for chunk in chunks]
+        cku_data = merge_cku_dicts(chunk_results)
 
         # 5. Build CKU with meta — handle missing / malformed LLM output
         has_visuals = any(v for p in parsed.pages for v in p.visuals)
