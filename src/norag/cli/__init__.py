@@ -9,6 +9,8 @@ app = typer.Typer(
 # Import and register commands
 from norag.cli.compile import compile_cmd
 from norag.cli.query import query_cmd
+from norag.cli.watch import watch_cmd
 
 app.command("compile")(compile_cmd)
 app.command("query")(query_cmd)
+app.command("watch")(watch_cmd)
