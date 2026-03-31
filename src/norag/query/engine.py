@@ -31,17 +31,29 @@ class QueryEngine:
             provider_kwargs["host"] = config.ollama_host
         self.provider = get_provider(config.provider, **provider_kwargs)
 
-    def query(self, question: str, top_k: int = 5) -> QueryResult:
+    def query(self, question: str, top_k: int = 5, user_role: str = "") -> QueryResult:
         """
         Answer a question using compiled knowledge.
 
         Pipeline:
         1. ROUTE    — Find relevant CKUs via knowledge map
-        2. ASSEMBLE — Extract minimal context from CKUs
-        3. ANSWER   — Send context + question to LLM
+        2. FILTER   — Remove CKUs the user has no access to
+        3. ASSEMBLE — Extract minimal context from CKUs
+        4. ANSWER   — Send context + question to LLM
+
+        Args:
+            question:  Natural-language question.
+            top_k:     Maximum number of CKUs to consider.
+            user_role: Role of the querying user (empty = anonymous).
+                       CKUs with no roles are public.  CKUs with roles
+                       are only visible if *user_role* matches.
         """
         # 1. Route
         cku_ids = self.router.route(question, top_k=top_k)
+
+        # 2. Filter by access control
+        if user_role or True:  # always filter — public CKUs pass through
+            cku_ids = self._filter_by_access(cku_ids, user_role)
 
         if not cku_ids:
             return QueryResult(
@@ -50,10 +62,10 @@ class QueryEngine:
                 routed_ckus=[],
             )
 
-        # 2. Assemble
+        # 3. Assemble
         context = self.assembler.assemble(cku_ids, question)
 
-        # 3. Answer
+        # 4. Answer
         prompt_context = context.to_prompt_context()
         answer = self.provider.answer_query(question, prompt_context)
 
@@ -62,3 +74,20 @@ class QueryEngine:
             context=context,
             routed_ckus=cku_ids,
         )
+
+    def _filter_by_access(self, cku_ids: list[str], user_role: str) -> list[str]:
+        """Filter CKU IDs by access control.
+
+        - CKUs with empty roles list are public (always visible).
+        - CKUs with roles are only visible if *user_role* is in the list.
+        """
+        filtered: list[str] = []
+        for cku_id in cku_ids:
+            try:
+                cku = self.store.load(cku_id)
+            except FileNotFoundError:
+                continue
+            roles = cku.meta.access.roles
+            if not roles or user_role in roles:
+                filtered.append(cku_id)
+        return filtered

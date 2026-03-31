@@ -12,6 +12,7 @@ def compile_cmd(
     provider: str = typer.Option(None, "--provider", "-p", help="LLM provider: claude | ollama"),
     model: str = typer.Option(None, "--model", "-m", help="Model name"),
     force: bool = typer.Option(False, "--force", "-f", help="Recompile even if CKU is up-to-date"),
+    roles: str = typer.Option("", "--roles", "-r", help="Access roles (comma-separated, e.g. 'hr,management')"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Show detailed output"),
 ) -> None:
     """Compile documents into Compiled Knowledge Units (CKUs)."""
@@ -38,9 +39,12 @@ def compile_cmd(
     console.print(f"Source: {source}")
     console.print()
 
+    # Parse roles
+    role_list = [r.strip() for r in roles.split(",") if r.strip()] if roles else []
+
     # Run compilation
     engine = CompilerEngine(config)
-    result = engine.compile(source, force=force)
+    result = engine.compile(source, force=force, roles=role_list)
 
     # Print results
     console.print()

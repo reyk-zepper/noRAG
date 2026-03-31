@@ -25,12 +25,17 @@ class SectionSummary(BaseModel):
     summary: str
 
 
+class CKUAccess(BaseModel):
+    roles: list[str] = Field(default_factory=list)  # empty = public (no restriction)
+
+
 class CKUMeta(BaseModel):
     source: str
     compiled: datetime
     hash: str
     type: str  # "pdf/multimodal", "markdown", etc.
     language: str = "en"
+    access: CKUAccess = Field(default_factory=CKUAccess)
 
 
 class CKUSummary(BaseModel):

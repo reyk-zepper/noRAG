@@ -25,6 +25,7 @@ from rich.progress import (
 from norag.config import Config
 from norag.models.cku import (
     CKU,
+    CKUAccess,
     CKUMeta,
     CKUSummary,
     CKUEntity,
@@ -83,7 +84,7 @@ class CompilerEngine:
     # Public API
     # ------------------------------------------------------------------
 
-    def compile(self, source: Path, force: bool = False) -> CompileResult:
+    def compile(self, source: Path, force: bool = False, roles: list[str] | None = None) -> CompileResult:
         """Compile a file or directory of documents.
 
         Args:
@@ -127,7 +128,7 @@ class CompilerEngine:
                 progress.update(task_id, description=f"[bold blue]{short_name}")
 
                 try:
-                    compiled = self._compile_single(file_path, force=force)
+                    compiled = self._compile_single(file_path, force=force, roles=roles)
                     if compiled:
                         result.compiled.append(str(file_path))
                         logger.info("Compiled: %s", file_path)
@@ -150,7 +151,7 @@ class CompilerEngine:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _compile_single(self, path: Path, force: bool = False) -> bool:
+    def _compile_single(self, path: Path, force: bool = False, roles: list[str] | None = None) -> bool:
         """Compile one document.
 
         Returns:
@@ -185,12 +186,15 @@ class CompilerEngine:
             f"{parsed.doc_type}/multimodal" if has_visuals else parsed.doc_type
         )
 
+        access = CKUAccess(roles=roles or [])
+
         meta = CKUMeta(
             source=str(path),
             compiled=datetime.now(timezone.utc),
             hash=current_hash,
             type=doc_type,
             language=cku_data.get("language", "en"),
+            access=access,
         )
 
         cku = CKU(

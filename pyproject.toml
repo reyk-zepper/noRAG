@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "norag"
-version = "0.3.0"
+version = "0.4.0"
 description = "Knowledge compiler. Compile documents into machine-optimized knowledge. No vectors. No chunks. No embeddings."
 readme = "README.md"
 license = "Apache-2.0"

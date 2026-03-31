@@ -22,11 +22,13 @@ class Config:
     # Derived paths — computed after __post_init__
     ckus_dir: Path = field(init=False)
     db_path: Path = field(init=False)
+    audit_path: Path = field(init=False)
 
     def __post_init__(self) -> None:
         self.store_dir = Path(self.store_dir)
         self.ckus_dir = self.store_dir / "ckus"
         self.db_path = self.store_dir / "knowledge.db"
+        self.audit_path = self.store_dir / "audit.db"
 
 
 def load_config(store_dir: Optional[Path] = None) -> Config:

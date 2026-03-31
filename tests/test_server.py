@@ -59,7 +59,7 @@ class TestHealth:
 
     def test_health_shows_version(self, client: TestClient) -> None:
         data = client.get("/health").json()
-        assert data["version"] == "0.3.0"
+        assert data["version"] == "0.4.0"
 
 
 # ---------------------------------------------------------------------------
@@ -258,7 +258,7 @@ class TestQuery:
 
             resp = client.post("/query", json={"question": "test", "top_k": 10})
             assert resp.status_code == 200
-            mock.assert_called_once_with("test", top_k=10)
+            mock.assert_called_once_with("test", top_k=10, user_role="")
 
     def test_query_missing_question(self, client: TestClient) -> None:
         resp = client.post("/query", json={})
