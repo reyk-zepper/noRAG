@@ -12,9 +12,11 @@ from norag.cli.query import query_cmd
 from norag.cli.watch import watch_cmd
 from norag.cli.serve import serve_cmd
 from norag.cli.audit import audit_cmd
+from norag.cli.bench import bench_cmd
 
 app.command("compile")(compile_cmd)
 app.command("query")(query_cmd)
 app.command("watch")(watch_cmd)
 app.command("serve")(serve_cmd)
 app.command("audit")(audit_cmd)
+app.command("bench")(bench_cmd)

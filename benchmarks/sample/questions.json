@@ -1,0 +1,58 @@
+[
+  {
+    "id": "q1",
+    "question": "What data types does Python support?",
+    "expected_keywords": ["integer", "float", "string", "boolean", "list", "dictionary"],
+    "category": "answer_quality",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q2",
+    "question": "How do you define a function in Python?",
+    "expected_keywords": ["def", "keyword", "arguments"],
+    "category": "answer_quality",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q3",
+    "question": "What is the Git branching strategy called Git Flow?",
+    "expected_keywords": ["main", "develop", "feature", "hotfix", "release"],
+    "category": "answer_quality",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q4",
+    "question": "What are best practices for pull requests?",
+    "expected_keywords": ["small", "test", "review", "description"],
+    "category": "answer_quality",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q5",
+    "question": "How does Python handle errors and what are Git hooks used for?",
+    "expected_keywords": ["try", "except", "pre-commit", "pre-push"],
+    "category": "cross_document",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q6",
+    "question": "What programming patterns are shared between Python classes and Git workflows?",
+    "expected_keywords": ["class", "branch", "commit"],
+    "category": "cross_document",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q7",
+    "question": "What is a list comprehension in Python?",
+    "expected_keywords": ["list", "concise", "sequence"],
+    "category": "answer_quality",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q8",
+    "question": "How do you resolve merge conflicts in Git?",
+    "expected_keywords": ["conflict", "markers", "stage", "merge"],
+    "category": "answer_quality",
+    "difficulty": "medium"
+  }
+]
