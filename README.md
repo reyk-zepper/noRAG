@@ -54,6 +54,121 @@ When a question is asked, the knowledge map is navigated (not searched via vecto
 | **Result** | Raw chunks in prompt | Compiled, minimal knowledge |
 | **Cost per query** | ~2000-4000 tokens context | ~200-500 tokens context |
 
+### Concrete Example: Onboarding Handbook
+
+Imagine a company has a 30-page **onboarding handbook** as PDF. Page 12 contains a flowchart "First Week", page 15 has a table "Contact persons per department", page 18 has text that references both. A new employee asks:
+
+> **"Who is my contact person in the first week and what do I need to do?"**
+
+#### What RAG does
+
+```
+PDF (30 pages)
+    |
+    v
+1. CHUNKING — Split into ~60 text blocks of 512 tokens each
+   - Flowchart on p.12? → Ignored (not text)
+   - Table on p.15? → Flattened to "| Name | Department |..."
+   - The connection between flowchart, table, and text on p.18 is LOST
+    |
+    v
+2. EMBEDDING — Each chunk → 1536-dimensional vector (lossy compression)
+    |
+    v
+3. RETRIEVAL (on every query) — Question → embedding → similarity search
+   Finds maybe:
+   - Chunk 23: "...first week starts with..."
+   - Chunk 41: "...contact persons..."
+   - Chunk 38: (irrelevant but "similar")
+   BUT: Flowchart is completely missing. Table is fragmented.
+    |
+    v
+4. LLM ANSWER — 3 raw chunks (~2500 tokens) in prompt
+   "In the first week you should... Your contact person is..."
+   → Incomplete (flowchart knowledge missing)
+   → No source citations possible
+   → 2500 tokens of context consumed
+```
+
+#### What noRAG does
+
+```
+PDF (30 pages)
+    |
+    v
+1. COMPILE (once) — LLM reads the ENTIRE document holistically
+   Understands text, tables, AND flowcharts as connected knowledge
+    |
+    v
+   CKU (onboarding-handbook-a3f7b2.yaml):
+
+   facts:
+     - "Every new employee gets a buddy from the same department"
+       source: {page: 12, section: first-week}, confidence: 1.0
+     - "Contact Engineering: Max Mueller, HR: Lisa Schmidt"
+       source: {page: 15}, confidence: 1.0
+     - "Day 1: Laptop setup + buddy meeting. Day 2: Team intro.
+        Day 3-5: First task with buddy support"
+       source: {page: 12, section: first-week}, confidence: 1.0
+
+   visuals:
+     - type: flowchart, source: {page: 12}
+       description: "5-day flow: Setup → Buddy → Team → Task → Review"
+     - type: table, source: {page: 15}
+       structured_data: [[Engineering, "Max Mueller"], [HR, "Lisa Schmidt"]]
+
+   entities:
+     - buddy-system (process) → part_of first-week
+     - hr-team (organization) → manages buddy-system
+    |
+    v
+   Indexed in SQLite Knowledge Map
+```
+
+```
+2. QUERY — Employee asks the question
+    |
+    v
+   Router: "first week" + "contact person"
+     → Finds CKU via knowledge map (SQLite lookup, ~5ms)
+     → Entities: buddy-system, hr-team
+     → Section: first-week
+    |
+    v
+   Assembler: Builds minimal context (~200 tokens)
+     → 3 relevant facts + flowchart description + table data
+    |
+    v
+   LLM answers:
+
+   "In your first week you go through 5 steps [source: p.12, flowchart]:
+    1. Laptop setup (Day 1)
+    2. Buddy meeting — you get a buddy from your department
+    3. Team intro (Day 2)
+    4. First task with buddy support (Day 3-5)
+    5. Review at end of week
+
+    Your contact person [source: p.15]:
+    Engineering: Max Mueller, HR: Lisa Schmidt, Design: Anna Weber"
+
+   → Complete (including flowchart knowledge)
+   → Exact source citations (page + section)
+   → Only ~200 tokens context (instead of 2500)
+```
+
+#### The difference in numbers
+
+| | RAG | noRAG |
+|---|---|---|
+| **Answer quality** | Incomplete (flowchart missing) | Complete (all sources) |
+| **Visual knowledge** | 0% (flowchart ignored) | 100% (compiled as facts) |
+| **Tokens per query** | ~2500 | ~200 |
+| **Source citations** | None (chunks are anonymous) | Page 12, 15 (exact) |
+| **Latency (before LLM)** | ~300ms (embedding + vector search) | ~5ms (SQLite lookup) |
+| **One-time cost** | ~60 embedding calls | 1 LLM call (compile) |
+
+**The key insight: RAG searches every time. noRAG has already understood the document.**
+
 ### Installation
 
 **Requirements:** Python 3.10+
@@ -388,6 +503,121 @@ Bei einer Frage wird die Wissenskarte navigiert (nicht per Vektor durchsucht), u
 | **Visuelles** | Wird ignoriert | First-Class-Citizen |
 | **Ergebnis** | Rohe Chunks im Prompt | Kompiliertes, minimales Wissen |
 | **Kosten pro Query** | ~2000-4000 Tokens Kontext | ~200-500 Tokens Kontext |
+
+### Konkretes Beispiel: Onboarding-Handbuch
+
+Stell dir vor: Ein Unternehmen hat ein 30-seitiges **Onboarding-Handbuch** als PDF. Seite 12 enthaelt ein Flowchart "Erste Woche", Seite 15 eine Tabelle "Ansprechpartner pro Abteilung", Seite 18 Text der auf beides referenziert. Ein neuer Mitarbeiter fragt:
+
+> **"Wer ist mein Ansprechpartner in der ersten Woche und was muss ich tun?"**
+
+#### Was RAG macht
+
+```
+PDF (30 Seiten)
+    |
+    v
+1. CHUNKING — Dokument wird in ~60 Textbloecke a 512 Tokens zerhackt
+   - Flowchart auf S.12? → Wird ignoriert (kein Text)
+   - Tabelle auf S.15? → Wird zu flachem Text "| Name | Abteilung |..."
+   - Der Zusammenhang zwischen Flowchart, Tabelle und Text auf S.18 ist VERLOREN
+    |
+    v
+2. EMBEDDING — Jeder Chunk → 1536-dimensionaler Vektor (verlustbehaftet)
+    |
+    v
+3. RETRIEVAL (bei JEDER Frage) — Frage → Embedding → Similarity Search
+   Findet vielleicht:
+   - Chunk 23: "...erste Woche beginnt..."
+   - Chunk 41: "...Ansprechpartner..."
+   - Chunk 38: (irrelevant, aber "aehnlich")
+   ABER: Das Flowchart fehlt komplett. Die Tabelle ist fragmentiert.
+    |
+    v
+4. LLM-ANTWORT — 3 rohe Chunks (~2500 Tokens) im Prompt
+   "In der ersten Woche sollten Sie... Ihr Ansprechpartner ist..."
+   → Unvollstaendig (Flowchart-Wissen fehlt)
+   → Keine Quellenangaben moeglich
+   → 2500 Tokens Kontext verbraucht
+```
+
+#### Was noRAG macht
+
+```
+PDF (30 Seiten)
+    |
+    v
+1. COMPILE (einmal) — LLM liest das GESAMTE Dokument holistisch
+   Versteht Text, Tabellen UND Flowcharts als zusammenhaengendes Wissen
+    |
+    v
+   CKU (onboarding-handbuch-a3f7b2.yaml):
+
+   facts:
+     - "Jeder neue Mitarbeiter bekommt einen Buddy aus derselben Abteilung"
+       source: {page: 12, section: erste-woche}, confidence: 1.0
+     - "Ansprechpartner Engineering: Max Mueller, HR: Lisa Schmidt"
+       source: {page: 15}, confidence: 1.0
+     - "Tag 1: Laptop-Setup + Buddy-Meeting. Tag 2: Team-Intro.
+        Tag 3-5: Erste Aufgabe mit Buddy-Support"
+       source: {page: 12, section: erste-woche}, confidence: 1.0
+
+   visuals:
+     - type: flowchart, source: {page: 12}
+       description: "5-Tage-Ablauf: Setup → Buddy → Team → Aufgabe → Review"
+     - type: table, source: {page: 15}
+       structured_data: [[Engineering, "Max Mueller"], [HR, "Lisa Schmidt"]]
+
+   entities:
+     - buddy-system (process) → part_of erste-woche
+     - hr-team (organization) → manages buddy-system
+    |
+    v
+   Indiziert in SQLite Knowledge Map
+```
+
+```
+2. QUERY — Mitarbeiter stellt seine Frage
+    |
+    v
+   Router: "erste Woche" + "Ansprechpartner"
+     → Findet CKU via Knowledge Map (SQLite Lookup, ~5ms)
+     → Entities: buddy-system, hr-team
+     → Sektion: erste-woche
+    |
+    v
+   Assembler: Baut minimalen Kontext (~200 Tokens)
+     → 3 relevante Fakten + Flowchart-Beschreibung + Tabellen-Daten
+    |
+    v
+   LLM antwortet:
+
+   "In der ersten Woche durchlaufen Sie 5 Schritte [Quelle: S.12, Flowchart]:
+    1. Laptop-Setup (Tag 1)
+    2. Buddy-Meeting — Sie bekommen einen Buddy aus Ihrer Abteilung
+    3. Team-Intro (Tag 2)
+    4. Erste Aufgabe mit Buddy-Support (Tag 3-5)
+    5. Review am Ende der Woche
+
+    Ihr Ansprechpartner [Quelle: S.15]:
+    Engineering: Max Mueller, HR: Lisa Schmidt, Design: Anna Weber"
+
+   → Vollstaendig (inkl. Flowchart-Wissen)
+   → Exakte Quellenangaben (Seite + Sektion)
+   → Nur ~200 Tokens Kontext (statt 2500)
+```
+
+#### Der Unterschied in Zahlen
+
+| | RAG | noRAG |
+|---|---|---|
+| **Antwort-Qualitaet** | Unvollstaendig (Flowchart fehlt) | Vollstaendig (alle Quellen) |
+| **Visuelles Wissen** | 0% (Flowchart ignoriert) | 100% (als Fakten kompiliert) |
+| **Tokens pro Query** | ~2500 | ~200 |
+| **Quellenangaben** | Keine (Chunks sind anonym) | Seite 12, 15 (exakt) |
+| **Latenz (vor LLM)** | ~300ms (Embedding + Vektor-Suche) | ~5ms (SQLite Lookup) |
+| **Einmalige Kosten** | ~60 Embedding-Calls | 1 LLM-Call (Compile) |
+
+**Das Kern-Insight: RAG sucht jedes Mal neu. noRAG hat das Dokument schon verstanden.**
 
 ### Installation
 
